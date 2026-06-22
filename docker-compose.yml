@@ -20,8 +20,9 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       # 首次启动自动建表
-      - ./GameClub/sql/gameclub_tables.sql:/docker-entrypoint-initdb.d/01_tables.sql
-      - ./GameClub/sql/gameclub_menu.sql:/docker-entrypoint-initdb.d/02_menu.sql
+      - ./GameClub/sql/ruoyi_tables.sql:/docker-entrypoint-initdb.d/01_ruoyi_tables.sql
+      - ./GameClub/sql/gameclub_tables.sql:/docker-entrypoint-initdb.d/02_tables.sql
+      - ./GameClub/sql/gameclub_menu.sql:/docker-entrypoint-initdb.d/03_menu.sql
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
