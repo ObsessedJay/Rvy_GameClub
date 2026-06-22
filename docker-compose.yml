@@ -19,10 +19,8 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      # 首次启动自动建表
-      - ./GameClub/sql/ruoyi_tables.sql:/docker-entrypoint-initdb.d/01_ruoyi_tables.sql
-      - ./GameClub/sql/gameclub_tables.sql:/docker-entrypoint-initdb.d/02_tables.sql
-      - ./GameClub/sql/gameclub_menu.sql:/docker-entrypoint-initdb.d/03_menu.sql
+      # 首次启动自动建库建表（含若依36张核心表 + GameClub业务表 + 初始数据）
+      - ./GameClub/sql/full_dump.sql:/docker-entrypoint-initdb.d/01_init.sql
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
