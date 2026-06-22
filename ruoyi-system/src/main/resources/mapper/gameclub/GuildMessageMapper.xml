@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GuildMessageMapper">
+
+    <resultMap type="com.ruoyi.system.domain.GuildMessage" id="GuildMessageResult">
+        <id     property="id"           column="id"           />
+        <result property="guildId"      column="guild_id"     />
+        <result property="guildName"    column="guild_name"   />
+        <result property="receiverId"   column="receiver_id"  />
+        <result property="receiverName" column="receiver_name"/>
+        <result property="senderId"     column="sender_id"    />
+        <result property="senderName"   column="sender_name"  />
+        <result property="title"        column="title"        />
+        <result property="content"      column="content"      />
+        <result property="msgType"      column="msg_type"     />
+        <result property="status"       column="status"       />
+        <result property="createdAt"    column="created_at"   />
+    </resultMap>
+
+    <sql id="selectGuildMessageVo">
+        SELECT m.id, m.guild_id, m.receiver_id, m.sender_id, m.title, 
+               m.content, m.msg_type, m.status, m.created_at,
+               g.name as guild_name,
+               r.nick_name as receiver_name,
+               s.nick_name as sender_name
+        FROM guild_message m
+        LEFT JOIN guild g ON m.guild_id = g.id
+        LEFT JOIN sys_user r ON m.receiver_id = r.user_id
+        LEFT JOIN sys_user s ON m.sender_id = s.user_id
+    </sql>
+
+    <select id="selectGuildMessageById" parameterType="Long" resultMap="GuildMessageResult">
+        <include refid="selectGuildMessageVo"/>
+        WHERE m.id = #{id}
+    </select>
+
+    <select id="selectGuildMessageList" resultMap="GuildMessageResult">
+        <include refid="selectGuildMessageVo"/>
+        <where>
+            <if test="receiverId != null">
+                AND m.receiver_id = #{receiverId}
+            </if>
+            <if test="guildId != null">
+                AND m.guild_id = #{guildId}
+            </if>
+            <if test="msgType != null">
+                AND m.msg_type = #{msgType}
+            </if>
+            <if test="status != null">
+                AND m.status = #{status}
+            </if>
+        </where>
+        ORDER BY m.created_at DESC
+    </select>
+
+    <select id="countUnread" resultType="int">
+        SELECT COUNT(1) FROM guild_message
+        WHERE receiver_id = #{receiverId} AND status = 0
+    </select>
+
+    <insert id="insertGuildMessage" parameterType="com.ruoyi.system.domain.GuildMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO guild_message (
+            <if test="guildId != null">guild_id,</if>
+            <if test="receiverId != null">receiver_id,</if>
+            <if test="senderId != null">sender_id,</if>
+            <if test="title != null">title,</if>
+            <if test="content != null">content,</if>
+            <if test="msgType != null">msg_type,</if>
+            <if test="status != null">status,</if>
+            created_at
+        ) VALUES (
+            <if test="guildId != null">#{guildId},</if>
+            <if test="receiverId != null">#{receiverId},</if>
+            <if test="senderId != null">#{senderId},</if>
+            <if test="title != null">#{title},</if>
+            <if test="content != null">#{content},</if>
+            <if test="msgType != null">#{msgType},</if>
+            <if test="status != null">#{status},</if>
+            NOW()
+        )
+    </insert>
+
+    <update id="updateGuildMessage" parameterType="com.ruoyi.system.domain.GuildMessage">
+        UPDATE guild_message
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="status != null">status = #{status},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteGuildMessageById" parameterType="Long">
+        DELETE FROM guild_message WHERE id = #{id}
+    </delete>
+
+    <update id="markAsRead" parameterType="Long">
+        UPDATE guild_message SET status = 1 WHERE id = #{id}
+    </update>
+
+    <update id="markAllAsRead" parameterType="Long">
+        UPDATE guild_message SET status = 1 WHERE receiver_id = #{receiverId} AND status = 0
+    </update>
+
+</mapper>

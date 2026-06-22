@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GuildApplicationMapper">
+
+    <resultMap type="GuildApplication" id="GuildApplicationResult">
+        <id property="id" column="id" />
+        <result property="guildId" column="guild_id" />
+        <result property="gamePartitionId" column="game_partition_id" />
+        <result property="userId" column="user_id" />
+        <result property="message" column="message" />
+        <result property="status" column="status" />
+        <result property="rejectReason" column="reject_reason" />
+        <result property="reviewerId" column="reviewer_id" />
+        <result property="reviewTime" column="review_time" />
+        <result property="expireTime" column="expire_time" />
+        <result property="createdAt" column="created_at" />
+        <result property="guildName" column="guild_name" />
+        <result property="applicantName" column="applicant_name" />
+        <result property="reviewerName" column="reviewer_name" />
+    </resultMap>
+
+    <sql id="selectGuildApplicationVo">
+        ga.id, ga.guild_id, ga.game_partition_id, ga.user_id, ga.message, ga.status, 
+        ga.reject_reason, ga.reviewer_id, ga.review_time, ga.expire_time, ga.created_at,
+        g.name as guild_name, u.nick_name as applicant_name, ru.nick_name as reviewer_name
+    </sql>
+
+    <select id="selectGuildApplicationList" parameterType="GuildApplication" resultMap="GuildApplicationResult">
+        SELECT
+        <include refid="selectGuildApplicationVo" />
+        FROM guild_application ga
+        LEFT JOIN guild g ON ga.guild_id = g.id
+        LEFT JOIN sys_user u ON ga.user_id = u.user_id
+        LEFT JOIN sys_user ru ON ga.reviewer_id = ru.user_id
+        WHERE ga.id IS NOT NULL
+        <if test="guildId != null">AND ga.guild_id = #{guildId}</if>
+        <if test="userId != null">AND ga.user_id = #{userId}</if>
+        <if test="applicantName != null and applicantName != ''">AND u.nick_name LIKE CONCAT('%', #{applicantName}, '%')</if>
+        <if test="status != null">AND ga.status = #{status}</if>
+        ORDER BY ga.created_at DESC
+    </select>
+
+    <select id="selectGuildApplicationById" parameterType="Long" resultMap="GuildApplicationResult">
+        SELECT
+        <include refid="selectGuildApplicationVo" />
+        FROM guild_application ga
+        LEFT JOIN guild g ON ga.guild_id = g.id
+        LEFT JOIN sys_user u ON ga.user_id = u.user_id
+        LEFT JOIN sys_user ru ON ga.reviewer_id = ru.user_id
+        WHERE ga.id = #{id}
+    </select>
+
+    <insert id="insertGuildApplication" parameterType="GuildApplication" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO guild_application (
+            guild_id, game_partition_id, user_id, message, status
+        ) VALUES (
+            #{guildId}, #{gamePartitionId}, #{userId}, #{message}, #{status}
+        )
+    </insert>
+
+    <update id="updateGuildApplication" parameterType="GuildApplication">
+        UPDATE guild_application
+        SET
+        <if test="guildId != null">guild_id = #{guildId},</if>
+        <if test="gamePartitionId != null">game_partition_id = #{gamePartitionId},</if>
+        <if test="userId != null">user_id = #{userId},</if>
+        <if test="message != null">message = #{message},</if>
+        <if test="status != null">status = #{status},</if>
+        <if test="rejectReason != null">reject_reason = #{rejectReason},</if>
+        <if test="reviewerId != null">reviewer_id = #{reviewerId},</if>
+        <if test="reviewTime != null">review_time = #{reviewTime},</if>
+        <if test="expireTime != null">expire_time = #{expireTime}</if>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteGuildApplicationById" parameterType="Long">
+        DELETE FROM guild_application WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteGuildApplicationByIds" parameterType="Long">
+        DELETE FROM guild_application WHERE id IN
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="approveGuildApplication" parameterType="GuildApplication">
+        UPDATE guild_application
+        SET
+        status = #{status},
+        reject_reason = #{rejectReason},
+        reviewer_id = #{reviewerId},
+        review_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <update id="batchApproveGuildApplication">
+        UPDATE guild_application
+        SET status = #{status},
+        review_time = NOW()
+        WHERE id IN
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+</mapper>

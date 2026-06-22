@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GuildAnnouncementMapper">
+
+    <resultMap type="GuildAnnouncement" id="GuildAnnouncementResult">
+        <id property="id" column="id" />
+        <result property="guildId" column="guild_id" />
+        <result property="gamePartitionId" column="game_partition_id" />
+        <result property="title" column="title" />
+        <result property="content" column="content" />
+        <result property="isTop" column="is_top" />
+        <result property="publisherId" column="publisher_id" />
+        <result property="createdAt" column="created_at" />
+        <result property="updatedAt" column="updated_at" />
+        <result property="guildName" column="guild_name" />
+        <result property="publisherName" column="publisher_name" />
+    </resultMap>
+
+    <sql id="selectGuildAnnouncementVo">
+        ga.id, ga.guild_id, ga.game_partition_id, ga.title, ga.content, ga.is_top, 
+        ga.publisher_id, ga.created_at, ga.updated_at, g.name as guild_name, u.nick_name as publisher_name
+    </sql>
+
+    <select id="selectGuildAnnouncementList" parameterType="GuildAnnouncement" resultMap="GuildAnnouncementResult">
+        SELECT
+        <include refid="selectGuildAnnouncementVo" />
+        FROM guild_announcement ga
+        LEFT JOIN guild g ON ga.guild_id = g.id
+        LEFT JOIN sys_user u ON ga.publisher_id = u.user_id
+        WHERE ga.id IS NOT NULL
+        <if test="guildId != null">AND ga.guild_id = #{guildId}</if>
+        <if test="title != null and title != ''">AND ga.title LIKE CONCAT('%', #{title}, '%')</if>
+        <if test="isTop != null">AND ga.is_top = #{isTop}</if>
+        ORDER BY ga.created_at DESC
+    </select>
+
+    <select id="selectGuildAnnouncementById" parameterType="Long" resultMap="GuildAnnouncementResult">
+        SELECT
+        <include refid="selectGuildAnnouncementVo" />
+        FROM guild_announcement ga
+        LEFT JOIN guild g ON ga.guild_id = g.id
+        LEFT JOIN sys_user u ON ga.publisher_id = u.user_id
+        WHERE ga.id = #{id}
+    </select>
+
+    <insert id="insertGuildAnnouncement" parameterType="GuildAnnouncement" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO guild_announcement (
+            guild_id, game_partition_id, title, content, is_top, publisher_id
+        ) VALUES (
+            #{guildId}, #{gamePartitionId}, #{title}, #{content}, #{isTop}, #{publisherId}
+        )
+    </insert>
+
+    <update id="updateGuildAnnouncement" parameterType="GuildAnnouncement">
+        UPDATE guild_announcement
+        SET
+        <if test="guildId != null">guild_id = #{guildId},</if>
+        <if test="gamePartitionId != null">game_partition_id = #{gamePartitionId},</if>
+        <if test="title != null">title = #{title},</if>
+        <if test="content != null">content = #{content},</if>
+        <if test="isTop != null">is_top = #{isTop},</if>
+        <if test="publisherId != null">publisher_id = #{publisherId}</if>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteGuildAnnouncementById" parameterType="Long">
+        DELETE FROM guild_announcement WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteGuildAnnouncementByIds" parameterType="Long">
+        DELETE FROM guild_announcement WHERE id IN
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="publishGuildAnnouncement" parameterType="Long">
+        UPDATE guild_announcement SET is_top = 1 WHERE id = #{id}
+    </update>
+
+    <update id="withdrawGuildAnnouncement" parameterType="Long">
+        UPDATE guild_announcement SET is_top = 0 WHERE id = #{id}
+    </update>
+
+    <select id="selectPublishedAnnouncements" resultMap="GuildAnnouncementResult">
+        SELECT
+        <include refid="selectGuildAnnouncementVo" />
+        FROM guild_announcement ga
+        LEFT JOIN guild g ON ga.guild_id = g.id
+        LEFT JOIN sys_user u ON ga.publisher_id = u.user_id
+        WHERE ga.is_top = 1
+        ORDER BY ga.created_at DESC
+    </select>
+
+</mapper>

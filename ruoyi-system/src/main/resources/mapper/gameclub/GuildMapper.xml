@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GuildMapper">
+
+    <resultMap type="com.ruoyi.system.domain.Guild" id="GuildResult">
+        <id     property="id"                   column="id"                   />
+        <result property="gamePartitionId"      column="game_partition_id"    />
+        <result property="deptId"               column="dept_id"              />
+        <result property="gamePartitionName"    column="game_partition_name"  />
+        <result property="name"                 column="name"                 />
+        <result property="description"          column="description"          />
+        <result property="recruitRequirement"   column="recruit_requirement"  />
+        <result property="onlineTime"           column="online_time"          />
+        <result property="avatar"               column="avatar"               />
+        <result property="banner"               column="banner"               />
+        <result property="presidentId"         column="president_id"         />
+        <result property="presidentName"        column="president_name"       />
+        <result property="memberCount"         column="member_count"         />
+        <result property="status"               column="status"               />
+        <result property="deletedAt"            column="deleted_at"           />
+        <result property="archiveUntil"         column="archive_until"        />
+        <result property="createdAt"            column="created_at"           />
+        <result property="updatedAt"            column="updated_at"           />
+    </resultMap>
+
+    <sql id="selectGuildVo">
+        SELECT g.id, g.game_partition_id, g.dept_id, g.name, g.description, g.recruit_requirement, 
+               g.online_time, g.avatar, g.banner, g.president_id, g.member_count, 
+               g.status, g.deleted_at, g.archive_until, g.created_at, g.updated_at,
+               p.game_name as game_partition_name,
+               u.nick_name as president_name
+        FROM guild g
+        LEFT JOIN game_partition p ON g.game_partition_id = p.id
+        LEFT JOIN sys_user u ON g.president_id = u.user_id
+    </sql>
+
+    <select id="selectGuildById" parameterType="Long" resultMap="GuildResult">
+        <include refid="selectGuildVo"/>
+        WHERE g.id = #{id} AND g.deleted_at IS NULL
+    </select>
+
+    <select id="selectGuildList" resultMap="GuildResult">
+        <include refid="selectGuildVo"/>
+        <where>
+            g.deleted_at IS NULL
+            <if test="gamePartitionId != null">
+                AND g.game_partition_id = #{gamePartitionId}
+            </if>
+            <if test="name != null and name != ''">
+                AND g.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="status != null">
+                AND g.status = #{status}
+            </if>
+        </where>
+        ORDER BY g.member_count DESC, g.created_at DESC
+    </select>
+
+    <select id="selectByPartitionAndName" resultMap="GuildResult">
+        <include refid="selectGuildVo"/>
+        WHERE g.game_partition_id = #{gamePartitionId} 
+          AND g.name = #{name}
+          AND g.deleted_at IS NULL
+    </select>
+
+    <select id="checkNameUnique" resultType="int">
+        SELECT COUNT(1) FROM guild
+        WHERE game_partition_id = #{gamePartitionId}
+          AND name = #{name}
+          AND deleted_at IS NULL
+        <if test="id != null">
+            AND id != #{id}
+        </if>
+    </select>
+
+    <select id="selectGuildsByPresidentId" resultMap="GuildResult">
+        <include refid="selectGuildVo"/>
+        WHERE g.president_id = #{userId} AND g.deleted_at IS NULL
+        ORDER BY g.created_at DESC
+    </select>
+
+    <insert id="insertGuild" parameterType="com.ruoyi.system.domain.Guild" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO guild (
+            <if test="gamePartitionId != null">game_partition_id,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="name != null">name,</if>
+            <if test="description != null">description,</if>
+            <if test="recruitRequirement != null">recruit_requirement,</if>
+            <if test="onlineTime != null">online_time,</if>
+            <if test="avatar != null">avatar,</if>
+            <if test="banner != null">banner,</if>
+            <if test="presidentId != null">president_id,</if>
+            <if test="memberCount != null">member_count,</if>
+            <if test="status != null">status,</if>
+            <if test="archiveUntil != null">archive_until,</if>
+            created_at
+        ) VALUES (
+            <if test="gamePartitionId != null">#{gamePartitionId},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="name != null">#{name},</if>
+            <if test="description != null">#{description},</if>
+            <if test="recruitRequirement != null">#{recruitRequirement},</if>
+            <if test="onlineTime != null">#{onlineTime},</if>
+            <if test="avatar != null">#{avatar},</if>
+            <if test="banner != null">#{banner},</if>
+            <if test="presidentId != null">#{presidentId},</if>
+            <if test="memberCount != null">#{memberCount},</if>
+            <if test="status != null">#{status},</if>
+            <if test="archiveUntil != null">#{archiveUntil},</if>
+            NOW()
+        )
+    </insert>
+
+    <update id="updateGuild" parameterType="com.ruoyi.system.domain.Guild">
+        UPDATE guild
+        <set>
+            <if test="gamePartitionId != null">game_partition_id = #{gamePartitionId},</if>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="recruitRequirement != null">recruit_requirement = #{recruitRequirement},</if>
+            <if test="onlineTime != null">online_time = #{onlineTime},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="banner != null">banner = #{banner},</if>
+            <if test="presidentId != null">president_id = #{presidentId},</if>
+            <if test="memberCount != null">member_count = #{memberCount},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="archiveUntil != null">archive_until = #{archiveUntil},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteGuildById" parameterType="Long">
+        DELETE FROM guild WHERE id = #{id}
+    </delete>
+
+    <update id="updateMemberCount">
+        UPDATE guild SET member_count = (SELECT COUNT(1) FROM guild_member WHERE guild_id = #{id} AND status = 1), updated_at = NOW() WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,61 @@
+# ============================================
+# 阶段1：Maven 构建（利用 Docker 层缓存加速）
+# ============================================
+FROM maven:3.9-eclipse-temurin-17 AS builder
+WORKDIR /build
+
+# ---- 第1层：仅复制 POM 文件，安装子模块到本地仓库 ----
+# 必须先用空 src 把子模块 install 到本地，否则 dependency:resolve 找不到 reactor 内模块
+COPY pom.xml ./
+COPY ruoyi-common/pom.xml   ruoyi-common/
+COPY ruoyi-system/pom.xml   ruoyi-system/
+COPY ruoyi-framework/pom.xml ruoyi-framework/
+COPY ruoyi-quartz/pom.xml   ruoyi-quartz/
+COPY ruoyi-generator/pom.xml ruoyi-generator/
+COPY ruoyi-admin/pom.xml    ruoyi-admin/
+
+# 创建空 src 目录作为占位（子模块间相互依赖，需要先 install 到本地仓库）
+# 只安装库模块，跳过 ruoyi-admin（其 spring-boot:repackage 需要真实主类）
+RUN mkdir -p ruoyi-common/src/main/java ruoyi-common/src/main/resources \
+             ruoyi-system/src/main/java ruoyi-system/src/main/resources \
+             ruoyi-framework/src/main/java ruoyi-framework/src/main/resources \
+             ruoyi-quartz/src/main/java ruoyi-quartz/src/main/resources \
+             ruoyi-generator/src/main/java ruoyi-generator/src/main/resources && \
+    mvn install -DskipTests -B -q -pl ruoyi-common,ruoyi-system,ruoyi-framework,ruoyi-quartz,ruoyi-generator
+
+# ---- 第2层：覆盖真实源码，重新编译 ----
+COPY ruoyi-common/src   ruoyi-common/src/
+COPY ruoyi-system/src   ruoyi-system/src/
+COPY ruoyi-framework/src ruoyi-framework/src/
+COPY ruoyi-quartz/src   ruoyi-quartz/src/
+COPY ruoyi-generator/src ruoyi-generator/src/
+COPY ruoyi-admin/src    ruoyi-admin/src/
+
+# 重新编译打包（外部依赖已缓存，子模块已安装，此处仅编译自身代码）
+RUN mvn clean package -pl ruoyi-admin -am -DskipTests -B
+
+# ============================================
+# 阶段2：运行时（轻量 JRE）
+# ============================================
+FROM eclipse-temurin:17-jre-alpine
+
+# 时区 + 健康检查工具
+RUN apk add --no-cache tzdata curl && \
+    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
+
+WORKDIR /app
+
+# 复制 JAR
+COPY --from=builder /build/ruoyi-admin/target/ruoyi-admin.jar app.jar
+
+# 创建上传目录
+RUN mkdir -p /home/ruoyi/uploadPath
+
+EXPOSE 8080
+
+# 健康检查
+HEALTHCHECK --interval=15s --timeout=5s --retries=10 \
+    CMD curl -f http://localhost:8080/ || exit 1
+
+ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=docker"]

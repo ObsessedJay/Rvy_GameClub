@@ -1,0 +1,105 @@
+version: "3.8"
+
+# ============================================
+# GameClub 一站式部署配置
+# 使用：docker compose up -d
+# ============================================
+
+services:
+  # ==================== MySQL ====================
+  mysql:
+    image: mysql:8.0
+    container_name: gameclub-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: ry_vue
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # 首次启动自动建表
+      - ./GameClub/sql/gameclub_tables.sql:/docker-entrypoint-initdb.d/01_tables.sql
+      - ./GameClub/sql/gameclub_menu.sql:/docker-entrypoint-initdb.d/02_menu.sql
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - gameclub-net
+
+  # ==================== Redis ====================
+  redis:
+    image: redis:7-alpine
+    container_name: gameclub-redis
+    restart: always
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - gameclub-net
+
+  # ==================== 后端 ====================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: gameclub-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      TZ: Asia/Shanghai
+    volumes:
+      - upload_data:/home/ruoyi/uploadPath
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - gameclub-net
+
+  # ==================== 前端 ====================
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: gameclub-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    networks:
+      - gameclub-net
+
+# ==================== 网络 ====================
+networks:
+  gameclub-net:
+    driver: bridge
+
+# ==================== 数据卷 ====================
+volumes:
+  mysql_data:
+  redis_data:
+  upload_data:

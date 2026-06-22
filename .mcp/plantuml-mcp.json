@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "plantuml": {
+      "command": "node",
+      "args": ["C:\\Users\\25174\\AppData\\Roaming\\npm\\node_modules\\@brainstack\\plantuml-mcp\\dist\\index.js"],
+      "env": {}
+    }
+  }
+}

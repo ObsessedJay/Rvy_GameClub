@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysUserDeptMapper">
+
+    <resultMap type="com.ruoyi.common.core.domain.entity.SysUserDept" id="SysUserDeptResult">
+        <id     property="id"             column="id"             />
+        <result property="userId"         column="user_id"        />
+        <result property="deptId"         column="dept_id"        />
+        <result property="websiteCode"    column="website_code"   />
+        <result property="isPrimary"      column="is_primary"     />
+        <result property="joinedAt"       column="joined_at"      />
+        <result property="createdAt"      column="created_at"     />
+        <result property="updatedAt"      column="updated_at"     />
+        <result property="deptName"       column="dept_name"      />
+        <result property="websiteName"    column="website_name"   />
+    </resultMap>
+
+    <sql id="selectUserDeptVo">
+        SELECT ud.id, ud.user_id, ud.dept_id, ud.website_code,
+               ud.is_primary, ud.joined_at, ud.created_at, ud.updated_at,
+               d.dept_name,
+               wc.website_name
+        FROM sys_user_dept ud
+        LEFT JOIN sys_dept d ON ud.dept_id = d.dept_id
+        LEFT JOIN sys_website_config wc ON ud.website_code = wc.website_code
+    </sql>
+
+    <select id="selectByUserAndWebsite" parameterType="map" resultMap="SysUserDeptResult">
+        <include refid="selectUserDeptVo"/>
+        WHERE ud.user_id = #{userId} AND ud.website_code = #{websiteCode}
+    </select>
+
+    <select id="selectByUserId" parameterType="Long" resultMap="SysUserDeptResult">
+        <include refid="selectUserDeptVo"/>
+        WHERE ud.user_id = #{userId}
+        ORDER BY ud.is_primary DESC, ud.created_at DESC
+    </select>
+
+    <select id="selectPrimaryByUserId" parameterType="Long" resultMap="SysUserDeptResult">
+        <include refid="selectUserDeptVo"/>
+        WHERE ud.user_id = #{userId} AND ud.is_primary = 1
+    </select>
+
+    <insert id="insertUserDept" parameterType="com.ruoyi.common.core.domain.entity.SysUserDept" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user_dept
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="deptId != null">dept_id,</if>
+            <if test="websiteCode != null">website_code,</if>
+            <if test="isPrimary != null">is_primary,</if>
+            <if test="joinedAt != null">joined_at,</if>
+            created_at,
+            updated_at
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="deptId != null">#{deptId},</if>
+            <if test="websiteCode != null">#{websiteCode},</if>
+            <if test="isPrimary != null">#{isPrimary},</if>
+            <if test="joinedAt != null">#{joinedAt},</if>
+            NOW(),
+            NOW()
+        </trim>
+    </insert>
+
+    <update id="updateUserDept" parameterType="com.ruoyi.common.core.domain.entity.SysUserDept">
+        UPDATE sys_user_dept
+        <set>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="isPrimary != null">is_primary = #{isPrimary},</if>
+            <if test="joinedAt != null">joined_at = #{joinedAt},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByUserAndWebsite" parameterType="map">
+        DELETE FROM sys_user_dept WHERE user_id = #{userId} AND website_code = #{websiteCode}
+    </delete>
+
+    <delete id="deleteById" parameterType="Long">
+        DELETE FROM sys_user_dept WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByUserId" parameterType="Long">
+        DELETE FROM sys_user_dept WHERE user_id = #{userId}
+    </delete>
+
+    <select id="selectByWebsiteCode" parameterType="String" resultMap="SysUserDeptResult">
+        <include refid="selectUserDeptVo"/>
+        WHERE ud.website_code = #{websiteCode}
+        ORDER BY ud.created_at DESC
+    </select>
+
+    <select id="selectByDeptId" parameterType="Long" resultMap="SysUserDeptResult">
+        <include refid="selectUserDeptVo"/>
+        WHERE ud.dept_id = #{deptId}
+        ORDER BY ud.created_at DESC
+    </select>
+
+</mapper>

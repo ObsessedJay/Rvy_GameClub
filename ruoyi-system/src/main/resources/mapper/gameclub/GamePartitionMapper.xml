@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GamePartitionMapper">
+
+    <resultMap type="com.ruoyi.system.domain.GamePartition" id="GamePartitionResult">
+        <id     property="id"           column="id"           />
+        <result property="deptId"       column="dept_id"      />
+        <result property="gameName"     column="game_name"    />
+        <result property="gameCode"     column="game_code"    />
+        <result property="icon"         column="icon"         />
+        <result property="description"  column="description"  />
+        <result property="sortOrder"    column="sort_order"    />
+        <result property="status"      column="status"       />
+        <result property="createdAt"    column="created_at"   />
+        <result property="updatedAt"   column="updated_at"   />
+        <result property="guildCount"   column="guild_count"  />
+        <result property="memberCount"  column="member_count" />
+    </resultMap>
+
+    <sql id="selectGamePartitionVo">
+        SELECT id, dept_id, game_name, game_code, icon, description, sort_order, status, created_at, updated_at
+        FROM game_partition
+    </sql>
+
+    <select id="selectGamePartitionById" parameterType="Long" resultMap="GamePartitionResult">
+        <include refid="selectGamePartitionVo"/>
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectGamePartitionList" resultMap="GamePartitionResult">
+        SELECT p.*,
+               (SELECT COUNT(*) FROM guild g WHERE g.game_partition_id = p.id AND g.status = 1) AS guild_count,
+               (SELECT COUNT(*) FROM guild_member gm INNER JOIN guild g2 ON gm.guild_id = g2.id WHERE g2.game_partition_id = p.id AND gm.status = 1) AS member_count
+        FROM game_partition p
+        <where>
+            <if test="gameCode != null and gameCode != ''">
+                AND p.game_code = #{gameCode}
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+        </where>
+        ORDER BY p.sort_order ASC, p.id ASC
+    </select>
+
+    <select id="selectByGameCode" parameterType="String" resultMap="GamePartitionResult">
+        <include refid="selectGamePartitionVo"/>
+        WHERE game_code = #{gameCode}
+    </select>
+
+    <select id="checkGameCodeUnique" resultType="int">
+        SELECT COUNT(1) FROM game_partition
+        WHERE game_code = #{gameCode}
+        <if test="id != null">
+            AND id != #{id}
+        </if>
+    </select>
+
+    <select id="selectEnabledPartitions" resultMap="GamePartitionResult">
+        SELECT p.*,
+               (SELECT COUNT(*) FROM guild g WHERE g.game_partition_id = p.id AND g.status = 1) AS guild_count,
+               (SELECT COUNT(*) FROM guild_member gm INNER JOIN guild g2 ON gm.guild_id = g2.id WHERE g2.game_partition_id = p.id AND gm.status = 1) AS member_count
+        FROM game_partition p
+        WHERE p.status = 1
+        ORDER BY p.sort_order ASC, p.id ASC
+    </select>
+
+    <insert id="insertGamePartition" parameterType="com.ruoyi.system.domain.GamePartition" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO game_partition (
+            <if test="deptId != null">dept_id,</if>
+            <if test="gameName != null">game_name,</if>
+            <if test="gameCode != null">game_code,</if>
+            <if test="icon != null">icon,</if>
+            <if test="description != null">description,</if>
+            <if test="sortOrder != null">sort_order,</if>
+            <if test="status != null">status,</if>
+            created_at
+        ) VALUES (
+            <if test="deptId != null">#{deptId},</if>
+            <if test="gameName != null">#{gameName},</if>
+            <if test="gameCode != null">#{gameCode},</if>
+            <if test="icon != null">#{icon},</if>
+            <if test="description != null">#{description},</if>
+            <if test="sortOrder != null">#{sortOrder},</if>
+            <if test="status != null">#{status},</if>
+            NOW()
+        )
+    </insert>
+
+    <update id="updateGamePartition" parameterType="com.ruoyi.system.domain.GamePartition">
+        UPDATE game_partition
+        <set>
+            <if test="deptId != null">dept_id = #{deptId},</if>
+            <if test="gameName != null">game_name = #{gameName},</if>
+            <if test="gameCode != null">game_code = #{gameCode},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="status != null">status = #{status},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteGamePartitionById" parameterType="Long">
+        DELETE FROM game_partition WHERE id = #{id}
+    </delete>
+
+</mapper>

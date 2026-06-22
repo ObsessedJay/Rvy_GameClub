@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GuildCreateApplicationMapper">
+
+    <resultMap type="com.ruoyi.system.domain.GuildCreateApplication" id="Result">
+        <id property="id" column="id"/>
+        <result property="gamePartitionId" column="game_partition_id"/>
+        <result property="guildName" column="guild_name"/>
+        <result property="description" column="description"/>
+        <result property="recruitRequirement" column="recruit_requirement"/>
+        <result property="applicantId" column="applicant_id"/>
+        <result property="status" column="status"/>
+        <result property="rejectReason" column="reject_reason"/>
+        <result property="reviewerId" column="reviewer_id"/>
+        <result property="reviewTime" column="review_time"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="gamePartitionName" column="game_partition_name"/>
+        <result property="applicantName" column="applicant_name"/>
+        <result property="reviewerName" column="reviewer_name"/>
+    </resultMap>
+
+    <sql id="selectVo">
+        SELECT a.id, a.game_partition_id, a.guild_name, a.description, a.recruit_requirement,
+               a.applicant_id, a.status, a.reject_reason, a.reviewer_id, a.review_time, a.created_at,
+               p.game_name as game_partition_name,
+               u.nick_name as applicant_name,
+               ru.nick_name as reviewer_name
+        FROM guild_create_application a
+        LEFT JOIN game_partition p ON a.game_partition_id = p.id
+        LEFT JOIN sys_user u ON a.applicant_id = u.user_id
+        LEFT JOIN sys_user ru ON a.reviewer_id = ru.user_id
+    </sql>
+
+    <select id="selectList" resultMap="Result">
+        <include refid="selectVo"/>
+        <where>
+            <if test="gamePartitionId != null">AND a.game_partition_id = #{gamePartitionId}</if>
+            <if test="status != null">AND a.status = #{status}</if>
+            <if test="applicantId != null">AND a.applicant_id = #{applicantId}</if>
+        </where>
+        ORDER BY a.created_at DESC
+    </select>
+
+    <select id="selectById" resultMap="Result">
+        <include refid="selectVo"/> WHERE a.id = #{id}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO guild_create_application (game_partition_id, guild_name, description, recruit_requirement, applicant_id, status)
+        VALUES (#{gamePartitionId}, #{guildName}, #{description}, #{recruitRequirement}, #{applicantId}, 0)
+    </insert>
+
+    <update id="approve">
+        UPDATE guild_create_application
+        SET status = #{status},
+            reject_reason = #{rejectReason},
+            reviewer_id = #{reviewerId},
+            review_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM guild_create_application WHERE id = #{id}
+    </delete>
+
+</mapper>

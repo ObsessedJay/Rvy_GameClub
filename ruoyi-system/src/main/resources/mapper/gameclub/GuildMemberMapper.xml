@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GuildMemberMapper">
+
+    <resultMap type="com.ruoyi.system.domain.GuildMember" id="GuildMemberResult">
+        <id     property="id"                   column="id"                   />
+        <result property="guildId"              column="guild_id"             />
+        <result property="guildName"            column="guild_name"           />
+        <result property="gamePartitionId"      column="game_partition_id"    />
+        <result property="gamePartitionName"    column="game_partition_name"  />
+        <result property="userId"               column="user_id"              />
+        <result property="userName"             column="user_name"            />
+        <result property="nickName"             column="nick_name"            />
+        <result property="role"                 column="role"                 />
+        <result property="joinTime"             column="join_time"            />
+        <result property="status"               column="status"               />
+        <result property="createdAt"            column="created_at"           />
+        <result property="updatedAt"            column="updated_at"           />
+    </resultMap>
+
+    <sql id="selectGuildMemberVo">
+        SELECT m.id, m.guild_id, m.game_partition_id, m.user_id, m.role, 
+               m.join_time, m.status, m.created_at, m.updated_at,
+               g.name as guild_name,
+               p.game_name as game_partition_name,
+               u.user_name, u.nick_name
+        FROM guild_member m
+        LEFT JOIN guild g ON m.guild_id = g.id
+        LEFT JOIN game_partition p ON m.game_partition_id = p.id
+        LEFT JOIN sys_user u ON m.user_id = u.user_id
+    </sql>
+
+    <select id="selectGuildMemberById" parameterType="Long" resultMap="GuildMemberResult">
+        <include refid="selectGuildMemberVo"/>
+        WHERE m.id = #{id}
+    </select>
+
+    <select id="selectGuildMemberList" resultMap="GuildMemberResult">
+        <include refid="selectGuildMemberVo"/>
+        <where>
+            <if test="guildId != null">
+                AND m.guild_id = #{guildId}
+            </if>
+            <if test="userId != null">
+                AND m.user_id = #{userId}
+            </if>
+            <if test="role != null">
+                AND m.role = #{role}
+            </if>
+            <if test="status != null">
+                AND m.status = #{status}
+            </if>
+        </where>
+        ORDER BY m.role ASC, m.join_time DESC
+    </select>
+
+    <select id="selectByGuildAndUser" resultMap="GuildMemberResult">
+        <include refid="selectGuildMemberVo"/>
+        WHERE m.guild_id = #{guildId} AND m.user_id = #{userId}
+    </select>
+
+    <select id="selectByPartitionAndUser" resultMap="GuildMemberResult">
+        <include refid="selectGuildMemberVo"/>
+        WHERE m.game_partition_id = #{gamePartitionId} AND m.user_id = #{userId} AND m.status = 1
+    </select>
+
+    <select id="countByGuildId" resultType="int">
+        SELECT COUNT(1) FROM guild_member
+        WHERE guild_id = #{guildId} AND status = 1
+    </select>
+
+    <insert id="insertGuildMember" parameterType="com.ruoyi.system.domain.GuildMember" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO guild_member (
+            <if test="guildId != null">guild_id,</if>
+            <if test="gamePartitionId != null">game_partition_id,</if>
+            <if test="userId != null">user_id,</if>
+            <if test="role != null">role,</if>
+            <if test="joinTime != null">join_time,</if>
+            <if test="status != null">status,</if>
+            created_at
+        ) VALUES (
+            <if test="guildId != null">#{guildId},</if>
+            <if test="gamePartitionId != null">#{gamePartitionId},</if>
+            <if test="userId != null">#{userId},</if>
+            <if test="role != null">#{role},</if>
+            <if test="joinTime != null">#{joinTime},</if>
+            <if test="status != null">#{status},</if>
+            NOW()
+        )
+    </insert>
+
+    <update id="updateGuildMember" parameterType="com.ruoyi.system.domain.GuildMember">
+        UPDATE guild_member
+        <set>
+            <if test="role != null">role = #{role},</if>
+            <if test="status != null">status = #{status},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateGuildMemberFull" parameterType="com.ruoyi.system.domain.GuildMember">
+        UPDATE guild_member
+        <set>
+            <if test="guildId != null">guild_id = #{guildId},</if>
+            <if test="gamePartitionId != null">game_partition_id = #{gamePartitionId},</if>
+            <if test="role != null">role = #{role},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="joinTime != null">join_time = #{joinTime},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteGuildMemberById" parameterType="Long">
+        DELETE FROM guild_member WHERE id = #{id}
+    </delete>
+
+    <update id="quitGuild" parameterType="Long">
+        UPDATE guild_member SET status = 0, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+</mapper>

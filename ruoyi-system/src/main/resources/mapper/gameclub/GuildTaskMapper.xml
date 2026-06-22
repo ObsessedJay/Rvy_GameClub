@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GuildTaskMapper">
+
+    <resultMap type="com.ruoyi.system.domain.GuildTask" id="GuildTaskResult">
+        <id     property="id"              column="id"              />
+        <result property="guildId"         column="guild_id"        />
+        <result property="guildName"       column="guild_name"      />
+        <result property="gamePartitionId" column="game_partition_id"/>
+        <result property="publisherId"     column="publisher_id"    />
+        <result property="publisherName"   column="publisher_name"  />
+        <result property="name"            column="name"            />
+        <result property="type"            column="type"            />
+        <result property="description"     column="description"     />
+        <result property="image"           column="image"           />
+        <result property="taskMode"        column="task_mode"       />
+        <result property="minPlayers"      column="min_players"     />
+        <result property="maxPlayers"      column="max_players"     />
+        <result property="startTime"       column="start_time"      />
+        <result property="joinDeadline"    column="join_deadline"   />
+        <result property="endTime"         column="end_time"        />
+        <result property="status"          column="status"          />
+        <result property="currentPlayers"  column="current_players" />
+        <result property="version"         column="version"         />
+        <result property="createdAt"       column="created_at"      />
+        <result property="updatedAt"       column="updated_at"      />
+    </resultMap>
+
+    <sql id="selectGuildTaskVo">
+        SELECT t.id, t.guild_id, t.game_partition_id, t.publisher_id,
+               t.name, t.type, t.description, t.image, t.task_mode,
+               t.min_players, t.max_players, t.start_time, t.join_deadline,
+               t.end_time, t.status, t.current_players, t.version,
+               t.created_at, t.updated_at,
+               g.name as guild_name, u.user_name as publisher_name
+        FROM guild_task t
+        LEFT JOIN guild g ON t.guild_id = g.id
+        LEFT JOIN sys_user u ON t.publisher_id = u.user_id
+    </sql>
+
+    <select id="selectGuildTaskById" parameterType="Long" resultMap="GuildTaskResult">
+        <include refid="selectGuildTaskVo"/>
+        WHERE t.id = #{id}
+    </select>
+
+    <select id="selectGuildTaskList" resultMap="GuildTaskResult">
+        <include refid="selectGuildTaskVo"/>
+        <where>
+            <if test="guildId != null">
+                AND t.guild_id = #{guildId}
+            </if>
+            <if test="type != null">
+                AND t.type = #{type}
+            </if>
+            <if test="status != null">
+                AND t.status = #{status}
+            </if>
+        </where>
+        ORDER BY t.created_at DESC
+    </select>
+
+    <insert id="insertGuildTask" parameterType="com.ruoyi.system.domain.GuildTask" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO guild_task (guild_id, game_partition_id, publisher_id, name, type, description, image, task_mode, min_players, max_players, start_time, join_deadline, end_time, status, created_at)
+        VALUES (#{guildId}, #{gamePartitionId}, #{publisherId}, #{name}, #{type}, #{description}, #{image}, #{taskMode}, #{minPlayers}, #{maxPlayers}, #{startTime}, #{joinDeadline}, #{endTime}, #{status}, NOW())
+    </insert>
+
+    <update id="updateGuildTask" parameterType="com.ruoyi.system.domain.GuildTask">
+        UPDATE guild_task
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="taskMode != null">task_mode = #{taskMode},</if>
+            <if test="minPlayers != null">min_players = #{minPlayers},</if>
+            <if test="maxPlayers != null">max_players = #{maxPlayers},</if>
+            <if test="startTime != null">start_time = #{startTime},</if>
+            <if test="joinDeadline != null">join_deadline = #{joinDeadline},</if>
+            <if test="endTime != null">end_time = #{endTime},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="currentPlayers != null">current_players = #{currentPlayers},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="incrCurrentPlayers">
+        UPDATE guild_task SET current_players = current_players + #{delta}, updated_at = NOW() WHERE id = #{id}
+    </update>
+
+    <delete id="deleteGuildTaskById" parameterType="Long">
+        DELETE FROM guild_task WHERE id = #{id}
+    </delete>
+
+</mapper>

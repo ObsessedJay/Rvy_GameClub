@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.SysWebsiteConfigMapper">
+
+    <resultMap type="com.ruoyi.common.core.domain.entity.SysWebsiteConfig" id="SysWebsiteConfigResult">
+        <id     property="id"              column="id"              />
+        <result property="websiteCode"     column="website_code"    />
+        <result property="websiteName"     column="website_name"    />
+        <result property="rootDeptId"      column="root_dept_id"    />
+        <result property="defaultDeptId"   column="default_dept_id" />
+        <result property="status"          column="status"          />
+        <result property="remark"          column="remark"          />
+        <result property="createdAt"       column="created_at"      />
+        <result property="updatedAt"       column="updated_at"      />
+    </resultMap>
+
+    <sql id="selectWebsiteConfigVo">
+        SELECT id, website_code, website_name, root_dept_id, default_dept_id,
+               status, remark, created_at, updated_at
+        FROM sys_website_config
+    </sql>
+
+    <select id="selectByWebsiteCode" parameterType="String" resultMap="SysWebsiteConfigResult">
+        <include refid="selectWebsiteConfigVo"/>
+        WHERE website_code = #{websiteCode} AND status = '0'
+    </select>
+
+    <select id="selectById" parameterType="Long" resultMap="SysWebsiteConfigResult">
+        <include refid="selectWebsiteConfigVo"/>
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectAll" resultMap="SysWebsiteConfigResult">
+        <include refid="selectWebsiteConfigVo"/>
+        WHERE status = '0'
+        ORDER BY id
+    </select>
+
+    <insert id="insertWebsiteConfig" parameterType="com.ruoyi.common.core.domain.entity.SysWebsiteConfig" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_website_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="websiteCode != null">website_code,</if>
+            <if test="websiteName != null">website_name,</if>
+            <if test="rootDeptId != null">root_dept_id,</if>
+            <if test="defaultDeptId != null">default_dept_id,</if>
+            <if test="status != null">status,</if>
+            <if test="remark != null">remark,</if>
+            created_at,
+            updated_at
+        </trim>
+        <trim prefix="VALUES (" suffix=")" suffixOverrides=",">
+            <if test="websiteCode != null">#{websiteCode},</if>
+            <if test="websiteName != null">#{websiteName},</if>
+            <if test="rootDeptId != null">#{rootDeptId},</if>
+            <if test="defaultDeptId != null">#{defaultDeptId},</if>
+            <if test="status != null">#{status},</if>
+            <if test="remark != null">#{remark},</if>
+            NOW(),
+            NOW()
+        </trim>
+    </insert>
+
+    <update id="updateWebsiteConfig" parameterType="com.ruoyi.common.core.domain.entity.SysWebsiteConfig">
+        UPDATE sys_website_config
+        <set>
+            <if test="websiteName != null">website_name = #{websiteName},</if>
+            <if test="rootDeptId != null">root_dept_id = #{rootDeptId},</if>
+            <if test="defaultDeptId != null">default_dept_id = #{defaultDeptId},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            updated_at = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById" parameterType="Long">
+        DELETE FROM sys_website_config WHERE id = #{id}
+    </delete>
+
+</mapper>

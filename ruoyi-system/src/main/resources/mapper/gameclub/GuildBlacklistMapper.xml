@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.GuildBlacklistMapper">
+
+    <resultMap type="GuildBlacklist" id="GuildBlacklistResult">
+        <id property="id" column="id" />
+        <result property="guildId" column="guild_id" />
+        <result property="gamePartitionId" column="game_partition_id" />
+        <result property="userId" column="user_id" />
+        <result property="reason" column="reason" />
+        <result property="operatorId" column="operator_id" />
+        <result property="createdAt" column="created_at" />
+        <result property="guildName" column="guild_name" />
+        <result property="memberName" column="member_name" />
+        <result property="operatorName" column="operator_name" />
+    </resultMap>
+
+    <sql id="selectGuildBlacklistVo">
+        gb.id, gb.guild_id, gb.game_partition_id, gb.user_id, gb.reason, gb.operator_id, gb.created_at,
+        g.name as guild_name, u.nick_name as member_name, ou.nick_name as operator_name
+    </sql>
+
+    <select id="selectGuildBlacklistList" parameterType="GuildBlacklist" resultMap="GuildBlacklistResult">
+        SELECT
+        <include refid="selectGuildBlacklistVo" />
+        FROM guild_blacklist gb
+        LEFT JOIN guild g ON gb.guild_id = g.id
+        LEFT JOIN sys_user u ON gb.user_id = u.user_id
+        LEFT JOIN sys_user ou ON gb.operator_id = ou.user_id
+        WHERE gb.id IS NOT NULL
+        <if test="guildId != null">AND gb.guild_id = #{guildId}</if>
+        <if test="userId != null">AND gb.user_id = #{userId}</if>
+        <if test="memberName != null and memberName != ''">AND u.nick_name LIKE CONCAT('%', #{memberName}, '%')</if>
+        ORDER BY gb.created_at DESC
+    </select>
+
+    <select id="selectGuildBlacklistById" parameterType="Long" resultMap="GuildBlacklistResult">
+        SELECT
+        <include refid="selectGuildBlacklistVo" />
+        FROM guild_blacklist gb
+        LEFT JOIN guild g ON gb.guild_id = g.id
+        LEFT JOIN sys_user u ON gb.user_id = u.user_id
+        LEFT JOIN sys_user ou ON gb.operator_id = ou.user_id
+        WHERE gb.id = #{id}
+    </select>
+
+    <insert id="insertGuildBlacklist" parameterType="GuildBlacklist" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO guild_blacklist (
+            guild_id, game_partition_id, user_id, reason, operator_id
+        ) VALUES (
+            #{guildId}, #{gamePartitionId}, #{userId}, #{reason}, #{operatorId}
+        )
+    </insert>
+
+    <update id="updateGuildBlacklist" parameterType="GuildBlacklist">
+        UPDATE guild_blacklist
+        SET
+        <if test="guildId != null">guild_id = #{guildId},</if>
+        <if test="gamePartitionId != null">game_partition_id = #{gamePartitionId},</if>
+        <if test="userId != null">user_id = #{userId},</if>
+        <if test="reason != null">reason = #{reason},</if>
+        <if test="operatorId != null">operator_id = #{operatorId}</if>
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteGuildBlacklistById" parameterType="Long">
+        DELETE FROM guild_blacklist WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteGuildBlacklistByIds" parameterType="Long">
+        DELETE FROM guild_blacklist WHERE id IN
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="checkBlacklist" parameterType="Long" resultType="Integer">
+        SELECT COUNT(*) FROM guild_blacklist WHERE guild_id = #{guildId} AND user_id = #{userId}
+    </select>
+
+</mapper>
